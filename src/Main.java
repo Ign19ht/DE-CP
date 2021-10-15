@@ -14,6 +14,8 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.ArrayList;
@@ -119,12 +121,28 @@ class Solution {
     }
 }
 
+enum PageName {
+    Functions,
+    ErrorsX,
+    ErrorsN
+}
+
 class GUI extends JFrame{
 
     private final String EXACT_KEY = "exactKey";
     private final String EULER_KEY = "eulerKey";
     private final String IMPROVED_EULER_KEY = "improvedEulerKey";
     private final String RUNGE_KUTTA_KEY = "rungeKuttaKey";
+    private final String EXACT_CB_KEY = "exactCheckBoxKey";
+    private final String PAGE1_BUTTON_KEY = "page1ButtonKey";
+    private final String PAGE2_BUTTON_KEY = "page2ButtonKey";
+    private final String PAGE3_BUTTON_KEY = "page3ButtonKey";
+    private final String X_INITIAL_TF_KEY = "xInitialTFKey";
+    private final String Y_INITIAL_TF_KEY = "yInitialTFKey";
+    private final String X_RIGHT_BOUND_TF_KEY = "xRightBoundTFKey";
+    private final String STEPS_TF_KEY = "stepsTFKey";
+    private final String N0_TF_KEY = "n0TFKey";
+    private final String N_MAX_TF_KEY = "nMaxTFKey";
     private final Solution solution;
 
     private XYDataset dataset;
@@ -132,6 +150,7 @@ class GUI extends JFrame{
     private JPanel initialConditionsPanel;
     private JPanel checkBoxesPanel;
     private JPanel pagesPanel;
+    private PageName currentPage;
 
     ArrayList<String> functionsOrder = new ArrayList<>();
 
@@ -141,20 +160,61 @@ class GUI extends JFrame{
         functionsOrder.add(EULER_KEY);
         functionsOrder.add(IMPROVED_EULER_KEY);
         functionsOrder.add(RUNGE_KUTTA_KEY);
+        currentPage = PageName.Functions;
         dataset = createDataset();
     }
 
+    private void setPageSettings() {
+        JCheckBox cb = (JCheckBox)(checkBoxesPanel.getClientProperty(EXACT_CB_KEY));
+        cb.setVisible(currentPage == PageName.Functions);
+
+    }
+
     private JPanel createPagesPanel() {
-        JButton Page1Button = new JButton("Page 1");
-        JButton Page2Button = new JButton("Page 2");
-        JButton Page3Button = new JButton("Page 3");
+        JButton page1Button = new JButton("Page 1");
+        JButton page2Button = new JButton("Page 2");
+        JButton page3Button = new JButton("Page 3");
+
+        page1Button.setEnabled(false);
+
+        page1Button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                page1Button.setEnabled(false);
+                page2Button.setEnabled(true);
+                page3Button.setEnabled(true);
+                setPageSettings();
+            }
+        });
+        page2Button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                page1Button.setEnabled(true);
+                page2Button.setEnabled(false);
+                page3Button.setEnabled(true);
+                setPageSettings();
+            }
+        });
+        page3Button.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                page1Button.setEnabled(true);
+                page2Button.setEnabled(true);
+                page3Button.setEnabled(false);
+                setPageSettings();
+            }
+        });
 
         JPanel pages = new JPanel(new FlowLayout(FlowLayout.LEFT));
         JPanel pagesBlock = new JPanel(new GridLayout(1, 3));
-        pagesBlock.add(Page1Button);
-        pagesBlock.add(Page2Button);
-        pagesBlock.add(Page3Button);
+        pagesBlock.add(page1Button);
+        pagesBlock.add(page2Button);
+        pagesBlock.add(page3Button);
         pages.add(pagesBlock);
+
+        pages.putClientProperty(PAGE1_BUTTON_KEY, page1Button);
+        pages.putClientProperty(PAGE2_BUTTON_KEY, page2Button);
+        pages.putClientProperty(PAGE3_BUTTON_KEY, page3Button);
 
         return pages;
     }
@@ -176,16 +236,22 @@ class GUI extends JFrame{
         JLabel xRightBorderLabel = new JLabel("X");
         JLabel stepsLabel = new JLabel("n");
         JLabel yInitialLabel = new JLabel("y0");
+        JLabel n0Label = new JLabel("n0");
+        JLabel nMaxLabel = new JLabel("N");
 
         JTextField xInitialTF = new JTextField("0");
         JTextField xRightBorderTF = new JTextField("7");
         JTextField stepsTF = new JTextField("10");
         JTextField yInitialTF = new JTextField("0");
+        JTextField n0TF = new JTextField("10");
+        JTextField nMaxTF = new JTextField("20");
 
         xInitialTF.setMinimumSize(new Dimension(30,20));
         xRightBorderTF.setMinimumSize(new Dimension(30,20));
         stepsTF.setMinimumSize(new Dimension(30,20));
         yInitialTF.setMinimumSize(new Dimension(30,20));
+        n0TF.setMinimumSize(new Dimension(30,20));
+        nMaxTF.setMinimumSize(new Dimension(30,20));
 
         xInitialTF.getDocument().addDocumentListener(new DocumentListener() {
 
@@ -303,6 +369,64 @@ class GUI extends JFrame{
                 warn(e);
             }
         });
+//        n0TF.getDocument().addDocumentListener(new DocumentListener() {
+//
+//            void warn(DocumentEvent e) {
+//                try {
+//                    String text = e.getDocument().getText(0, e.getDocument().getLength());
+//                    if (!text.isEmpty()) {
+//                        solution.setAmountOfSteps(Integer.parseInt(text));
+//                        updateChartDataset();
+//                    }
+//                } catch (BadLocationException ex) {
+//                    ex.printStackTrace();
+//                }
+//            }
+//
+//            @Override
+//            public void insertUpdate(DocumentEvent e) {
+//                warn(e);
+//            }
+//
+//            @Override
+//            public void removeUpdate(DocumentEvent e) {
+//                warn(e);
+//            }
+//
+//            @Override
+//            public void changedUpdate(DocumentEvent e) {
+//                warn(e);
+//            }
+//        });
+//        nMaxTF.getDocument().addDocumentListener(new DocumentListener() {
+//
+//            void warn(DocumentEvent e) {
+//                try {
+//                    String text = e.getDocument().getText(0, e.getDocument().getLength());
+//                    if (!text.isEmpty()) {
+//                        solution.setAmountOfSteps(Integer.parseInt(text));
+//                        updateChartDataset();
+//                    }
+//                } catch (BadLocationException ex) {
+//                    ex.printStackTrace();
+//                }
+//            }
+//
+//            @Override
+//            public void insertUpdate(DocumentEvent e) {
+//                warn(e);
+//            }
+//
+//            @Override
+//            public void removeUpdate(DocumentEvent e) {
+//                warn(e);
+//            }
+//
+//            @Override
+//            public void changedUpdate(DocumentEvent e) {
+//                warn(e);
+//            }
+//        });
 
 
         JPanel initialCondition = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -321,19 +445,30 @@ class GUI extends JFrame{
                         .addComponent(xRightBorderTF))
                 .addGroup(initialConditionBlock.createParallelGroup()
                         .addComponent(stepsLabel)
-                        .addComponent(stepsTF)));
+                        .addComponent(stepsTF))
+                .addGroup(initialConditionBlock.createParallelGroup()
+                        .addComponent(n0Label)
+                        .addComponent(n0TF))
+                .addGroup(initialConditionBlock.createParallelGroup()
+                        .addComponent(nMaxLabel)
+                        .addComponent(nMaxTF)));
         initialConditionBlock.setHorizontalGroup(initialConditionBlock.createSequentialGroup()
                 .addGroup(initialConditionBlock.createParallelGroup()
                         .addComponent(xInitialLabel)
                         .addComponent(yInitialLabel)
                         .addComponent(xRightBorderLabel)
-                        .addComponent(stepsLabel))
+                        .addComponent(stepsLabel)
+                        .addComponent(n0Label)
+                        .addComponent(nMaxLabel))
                 .addGroup(initialConditionBlock.createParallelGroup()
                         .addComponent(xInitialTF)
                         .addComponent(yInitialTF)
                         .addComponent(xRightBorderTF)
-                        .addComponent(stepsTF)));
-        initialConditionBlock.linkSize(SwingConstants.VERTICAL, xInitialTF, yInitialTF, xRightBorderTF, stepsTF);
+                        .addComponent(stepsTF)
+                        .addComponent(n0TF)
+                        .addComponent(nMaxTF)));
+        initialConditionBlock.linkSize(SwingConstants.VERTICAL,
+                xInitialTF, yInitialTF, xRightBorderTF, stepsTF, n0TF, nMaxTF);
         initialCondition.setLayout(initialConditionBlock);
 
         return initialCondition;
@@ -377,6 +512,8 @@ class GUI extends JFrame{
         checkBoxesBlock.add(improvedEulerCB);
         checkBoxesBlock.add(rungeKuttaCB);
         checkBoxes.add(checkBoxesBlock);
+
+        checkBoxes.putClientProperty(EXACT_CB_KEY, exactCB);
 
         return checkBoxes;
     }
