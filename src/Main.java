@@ -45,7 +45,7 @@ class Solution {
         parameter = (yInitial - Math.exp(xInitial)) / Math.exp(-xInitial);
     }
 
-    public void setRightBorder(int rightBorder) {
+    public void setRightBorder(double rightBorder) {
         this.rightBorder = rightBorder;
         h = (rightBorder - xInitial) / amountOfSteps;
     }
@@ -141,8 +141,11 @@ class GUI extends JFrame{
     private final String Y_INITIAL_TF_KEY = "yInitialTFKey";
     private final String X_RIGHT_BOUND_TF_KEY = "xRightBoundTFKey";
     private final String STEPS_TF_KEY = "stepsTFKey";
+    private final String STEPS_LABEL_KEY = "stepsLabelKey";
     private final String N0_TF_KEY = "n0TFKey";
+    private final String N0_LABEL_KEY = "n0LabelKey";
     private final String N_MAX_TF_KEY = "nMaxTFKey";
+    private final String N_MAX_LABEL_KEY = "nMaxLabelKey";
     private final Solution solution;
 
     private XYDataset dataset;
@@ -165,9 +168,19 @@ class GUI extends JFrame{
     }
 
     private void setPageSettings() {
-        JCheckBox cb = (JCheckBox)(checkBoxesPanel.getClientProperty(EXACT_CB_KEY));
-        cb.setVisible(currentPage == PageName.Functions);
-
+        ((JCheckBox)checkBoxesPanel.getClientProperty(EXACT_CB_KEY)).setVisible(currentPage == PageName.Functions);
+        ((JButton)pagesPanel.getClientProperty(PAGE1_BUTTON_KEY)).setEnabled(currentPage != PageName.Functions);
+        ((JButton)pagesPanel.getClientProperty(PAGE2_BUTTON_KEY)).setEnabled(currentPage != PageName.ErrorsX);
+        ((JButton)pagesPanel.getClientProperty(PAGE3_BUTTON_KEY)).setEnabled(currentPage != PageName.ErrorsN);
+        ((JTextField)initialConditionsPanel.getClientProperty(X_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
+        ((JTextField)initialConditionsPanel.getClientProperty(Y_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
+        ((JTextField)initialConditionsPanel.getClientProperty(X_RIGHT_BOUND_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
+        ((JTextField)initialConditionsPanel.getClientProperty(STEPS_TF_KEY)).setVisible(currentPage != PageName.ErrorsN);
+        ((JTextField)initialConditionsPanel.getClientProperty(N0_TF_KEY)).setVisible(currentPage == PageName.ErrorsN);
+        ((JTextField)initialConditionsPanel.getClientProperty(N_MAX_TF_KEY)).setVisible(currentPage == PageName.ErrorsN);
+        ((JLabel)initialConditionsPanel.getClientProperty(STEPS_LABEL_KEY)).setVisible(currentPage != PageName.ErrorsN);
+        ((JLabel)initialConditionsPanel.getClientProperty(N0_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
+        ((JLabel)initialConditionsPanel.getClientProperty(N_MAX_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
     }
 
     private JPanel createPagesPanel() {
@@ -175,32 +188,24 @@ class GUI extends JFrame{
         JButton page2Button = new JButton("Page 2");
         JButton page3Button = new JButton("Page 3");
 
-        page1Button.setEnabled(false);
-
         page1Button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                page1Button.setEnabled(false);
-                page2Button.setEnabled(true);
-                page3Button.setEnabled(true);
+                currentPage = PageName.Functions;
                 setPageSettings();
             }
         });
         page2Button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                page1Button.setEnabled(true);
-                page2Button.setEnabled(false);
-                page3Button.setEnabled(true);
+                currentPage = PageName.ErrorsX;
                 setPageSettings();
             }
         });
         page3Button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                page1Button.setEnabled(true);
-                page2Button.setEnabled(true);
-                page3Button.setEnabled(false);
+                currentPage = PageName.ErrorsN;
                 setPageSettings();
             }
         });
@@ -225,10 +230,9 @@ class GUI extends JFrame{
         chartPanel.repaint();
     }
 
-    private void updateVisibility(String key, boolean isVisible) {
+    private void updateGraphVisibility(String key, boolean isVisible) {
         chartPanel.getChart().getXYPlot().getRenderer().setSeriesVisible(functionsOrder.indexOf(key), isVisible);
         chartPanel.repaint();
-//        setSeriesLinesVisible(i, isVisible[i]);
     }
 
     private JPanel createInitialConditionsPanel() {
@@ -259,7 +263,7 @@ class GUI extends JFrame{
                 try {
                     String text = e.getDocument().getText(0, e.getDocument().getLength());
                     if (!text.isEmpty()) {
-                        solution.setxInitial(Integer.parseInt(text));
+                        solution.setxInitial(Double.parseDouble(text));
                         updateChartDataset();
                     }
                 } catch (BadLocationException ex) {
@@ -288,7 +292,7 @@ class GUI extends JFrame{
                 try {
                     String text = e.getDocument().getText(0, e.getDocument().getLength());
                     if (!text.isEmpty()) {
-                        solution.setyInitial(Integer.parseInt(text));
+                        solution.setyInitial(Double.parseDouble(text));
                         updateChartDataset();
                     }
                 } catch (BadLocationException ex) {
@@ -317,7 +321,7 @@ class GUI extends JFrame{
                 try {
                     String text = e.getDocument().getText(0, e.getDocument().getLength());
                     if (!text.isEmpty()) {
-                        solution.setRightBorder(Integer.parseInt(text));
+                        solution.setRightBorder(Double.parseDouble(text));
                         updateChartDataset();
                     }
                 } catch (BadLocationException ex) {
@@ -471,6 +475,15 @@ class GUI extends JFrame{
                 xInitialTF, yInitialTF, xRightBorderTF, stepsTF, n0TF, nMaxTF);
         initialCondition.setLayout(initialConditionBlock);
 
+        initialCondition.putClientProperty(X_INITIAL_TF_KEY, xInitialTF);
+        initialCondition.putClientProperty(Y_INITIAL_TF_KEY, yInitialTF);
+        initialCondition.putClientProperty(X_RIGHT_BOUND_TF_KEY, xRightBorderTF);
+        initialCondition.putClientProperty(STEPS_TF_KEY, stepsTF);
+        initialCondition.putClientProperty(N0_TF_KEY, n0TF);
+        initialCondition.putClientProperty(N_MAX_TF_KEY, nMaxTF);
+        initialCondition.putClientProperty(STEPS_LABEL_KEY, stepsLabel);
+        initialCondition.putClientProperty(N0_LABEL_KEY, n0Label);
+        initialCondition.putClientProperty(N_MAX_LABEL_KEY, nMaxLabel);
         return initialCondition;
     }
 
@@ -483,25 +496,25 @@ class GUI extends JFrame{
         exactCB.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                updateVisibility(EXACT_KEY, e.getStateChange() == ItemEvent.SELECTED);
+                updateGraphVisibility(EXACT_KEY, e.getStateChange() == ItemEvent.SELECTED);
             }
         });
         eulerCB.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                updateVisibility(EULER_KEY, e.getStateChange() == ItemEvent.SELECTED);
+                updateGraphVisibility(EULER_KEY, e.getStateChange() == ItemEvent.SELECTED);
             }
         });
         improvedEulerCB.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                updateVisibility(IMPROVED_EULER_KEY, e.getStateChange() == ItemEvent.SELECTED);
+                updateGraphVisibility(IMPROVED_EULER_KEY, e.getStateChange() == ItemEvent.SELECTED);
             }
         });
         rungeKuttaCB.addItemListener(new ItemListener() {
             @Override
             public void itemStateChanged(ItemEvent e) {
-                updateVisibility(RUNGE_KUTTA_KEY, e.getStateChange() == ItemEvent.SELECTED);
+                updateGraphVisibility(RUNGE_KUTTA_KEY, e.getStateChange() == ItemEvent.SELECTED);
             }
         });
 
@@ -584,6 +597,8 @@ class GUI extends JFrame{
         container.add(initialConditionsPanel, BorderLayout.WEST);
         container.add(chartPanel, BorderLayout.CENTER);
         container.add(checkBoxesPanel, BorderLayout.EAST);
+
+        setPageSettings();
 
         setLocationRelativeTo(null);
         pack();
