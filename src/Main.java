@@ -126,9 +126,12 @@ class GUI extends JFrame{
     private final String IMPROVED_EULER_KEY = "improvedEulerKey";
     private final String RUNGE_KUTTA_KEY = "rungeKuttaKey";
     private final Solution solution;
+
     private XYDataset dataset;
-    private final JFreeChart chart;
-    private final ChartPanel chartPanel;
+    private ChartPanel chartPanel;
+    private JPanel initialConditionsPanel;
+    private JPanel checkBoxesPanel;
+    private JPanel pagesPanel;
 
     ArrayList<String> functionsOrder = new ArrayList<>();
 
@@ -139,8 +142,6 @@ class GUI extends JFrame{
         functionsOrder.add(IMPROVED_EULER_KEY);
         functionsOrder.add(RUNGE_KUTTA_KEY);
         dataset = createDataset();
-        chart = createChart(dataset);
-        chartPanel = new ChartPanel(chart);
     }
 
     private JPanel createPagesPanel() {
@@ -160,12 +161,12 @@ class GUI extends JFrame{
 
     private void updateChartDataset() {
         dataset = createDataset();
-        chart.getXYPlot().setDataset(dataset);
+        chartPanel.getChart().getXYPlot().setDataset(dataset);
         chartPanel.repaint();
     }
 
     private void updateVisibility(String key, boolean isVisible) {
-        chart.getXYPlot().getRenderer().setSeriesVisible(functionsOrder.indexOf(key), isVisible);
+        chartPanel.getChart().getXYPlot().getRenderer().setSeriesVisible(functionsOrder.indexOf(key), isVisible);
         chartPanel.repaint();
 //        setSeriesLinesVisible(i, isVisible[i]);
     }
@@ -433,14 +434,19 @@ class GUI extends JFrame{
     public void createWindow() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
+        JFreeChart chart = createChart(dataset);
+        chartPanel = new ChartPanel(chart);
         chartPanel.setPreferredSize(new Dimension(500, 500));
 
-        Container container = getContentPane();
+        initialConditionsPanel = createInitialConditionsPanel();
+        checkBoxesPanel = createCheckBoxesPanel();
+        pagesPanel = createPagesPanel();
 
-        container.add(createPagesPanel(), BorderLayout.NORTH);
-        container.add(createInitialConditionsPanel(), BorderLayout.WEST);
+        Container container = getContentPane();
+        container.add(pagesPanel, BorderLayout.NORTH);
+        container.add(initialConditionsPanel, BorderLayout.WEST);
         container.add(chartPanel, BorderLayout.CENTER);
-        container.add(createCheckBoxesPanel(), BorderLayout.EAST);
+        container.add(checkBoxesPanel, BorderLayout.EAST);
 
         setLocationRelativeTo(null);
         pack();
