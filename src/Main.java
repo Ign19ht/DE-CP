@@ -10,32 +10,66 @@ import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
 import java.awt.*;
-import java.util.Arrays;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.util.ArrayList;
 
 class Solution {
+    private double rightBorder;
+    private double xInitial;
+    private double yInitial;
+    private int amountOfSteps;
+    private double h;
+    private double parameter;
 
-    private final static int LEFT_BORDER = 0;
-    private final static int RIGHT_BORDER = 7;
-    private final static double X_INITIAL = 0.;
-    private final static double Y_INITIAL = 0.;
-    private static int amountOfSteps = 15;
-    private static double h = (double) (RIGHT_BORDER - LEFT_BORDER) / amountOfSteps;
-
-    private static double f(double x, double y) {
-        return 2 * Math.exp(x) - y;
+    public Solution() {
+        rightBorder = 7.;
+        xInitial = 0.;
+        yInitial = 0.;
+        amountOfSteps = 15;
+        h = (rightBorder - xInitial) / amountOfSteps;
+        calculateParameter();
     }
 
-    public void changeAmountOfSteps(int n) {
-        amountOfSteps = n;
-        h = (double) (RIGHT_BORDER - LEFT_BORDER) / amountOfSteps;
+    private double f(double x, double y) {
+        return 2 * Math.exp(x) - y;
+    }
+    
+    private void calculateParameter() {
+        parameter = (yInitial - Math.exp(xInitial)) / Math.exp(-xInitial);
+    }
+
+    public void setRightBorder(int rightBorder) {
+        this.rightBorder = rightBorder;
+        h = (rightBorder - xInitial) / amountOfSteps;
+    }
+
+    public void setxInitial(double xInitial) {
+        this.xInitial = xInitial;
+        h = (rightBorder - xInitial) / amountOfSteps;
+        calculateParameter();
+    }
+
+    public void setyInitial(double yInitial) {
+        this.yInitial = yInitial;
+        h = (rightBorder - xInitial) / amountOfSteps;
+        calculateParameter();
+    }
+
+    public void setAmountOfSteps(int amountOfSteps) {
+        this.amountOfSteps = amountOfSteps;
+        h = (rightBorder - xInitial) / amountOfSteps;
     }
 
     public XYSeries getExactSolution() {
         var series = new XYSeries("Exact");
-        double x = LEFT_BORDER;
+        double x = xInitial;
         for (int i = 0; i <= amountOfSteps; i++) {
-            series.add(x, Math.exp(x) - Math.exp(-x));
+            series.add(x, Math.exp(x) + parameter * Math.exp(-x));
             x += h;
         }
         return series;
@@ -43,8 +77,8 @@ class Solution {
 
     public XYSeries getEulerSolution() {
         var series = new XYSeries("Euler");
-        double x = X_INITIAL;
-        double y = Y_INITIAL;
+        double x = xInitial;
+        double y = yInitial;
         series.add(x, y);
         for (int i = 1; i <= amountOfSteps; i++) {
             y += h * f(x, y);
@@ -56,8 +90,8 @@ class Solution {
 
     public XYSeries getImprovedEulerSolution() {
         var series = new XYSeries("Improved Euler");
-        double x = X_INITIAL;
-        double y = Y_INITIAL;
+        double x = xInitial;
+        double y = yInitial;
         series.add(x, y);
         for (int i = 1; i <= amountOfSteps; i++) {
             y += h * f(x + h / 2, y + h * f(x, y) / 2);
@@ -69,8 +103,8 @@ class Solution {
 
     public XYSeries getRungeKuttaSolution() {
         var series = new XYSeries("Runge-Kutta");
-        double x = X_INITIAL;
-        double y = Y_INITIAL;
+        double x = xInitial;
+        double y = yInitial;
         series.add(x, y);
         for (int i = 1; i <= amountOfSteps; i++) {
             double k1 = f(x, y);
@@ -87,14 +121,26 @@ class Solution {
 
 class GUI extends JFrame{
 
+    private final String EXACT_KEY = "exactKey";
+    private final String EULER_KEY = "eulerKey";
+    private final String IMPROVED_EULER_KEY = "improvedEulerKey";
+    private final String RUNGE_KUTTA_KEY = "rungeKuttaKey";
     private final Solution solution;
+    private XYDataset dataset;
+    private final JFreeChart chart;
+    private final ChartPanel chartPanel;
 
-    private boolean[] isVisible;
+    ArrayList<String> functionsOrder = new ArrayList<>();
 
     public GUI(Solution solution) {
         this.solution = solution;
-        isVisible = new boolean[4];
-        Arrays.fill(isVisible, true);
+        functionsOrder.add(EXACT_KEY);
+        functionsOrder.add(EULER_KEY);
+        functionsOrder.add(IMPROVED_EULER_KEY);
+        functionsOrder.add(RUNGE_KUTTA_KEY);
+        dataset = createDataset();
+        chart = createChart(dataset);
+        chartPanel = new ChartPanel(chart);
     }
 
     private JPanel createPagesPanel() {
@@ -112,6 +158,18 @@ class GUI extends JFrame{
         return pages;
     }
 
+    private void updateChartDataset() {
+        dataset = createDataset();
+        chart.getXYPlot().setDataset(dataset);
+        chartPanel.repaint();
+    }
+
+    private void updateVisibility(String key, boolean isVisible) {
+        chart.getXYPlot().getRenderer().setSeriesVisible(functionsOrder.indexOf(key), isVisible);
+        chartPanel.repaint();
+//        setSeriesLinesVisible(i, isVisible[i]);
+    }
+
     private JPanel createInitialConditionsPanel() {
         JLabel xInitialLabel = new JLabel("x0");
         JLabel xRightBorderLabel = new JLabel("X");
@@ -119,13 +177,132 @@ class GUI extends JFrame{
         JLabel yInitialLabel = new JLabel("y0");
 
         JTextField xInitialTF = new JTextField("0");
-        xInitialTF.setMinimumSize(new Dimension(30,20));
         JTextField xRightBorderTF = new JTextField("7");
-        xRightBorderTF.setMinimumSize(new Dimension(30,20));
         JTextField stepsTF = new JTextField("10");
-        stepsTF.setMinimumSize(new Dimension(30,20));
         JTextField yInitialTF = new JTextField("0");
+
+        xInitialTF.setMinimumSize(new Dimension(30,20));
+        xRightBorderTF.setMinimumSize(new Dimension(30,20));
+        stepsTF.setMinimumSize(new Dimension(30,20));
         yInitialTF.setMinimumSize(new Dimension(30,20));
+
+        xInitialTF.getDocument().addDocumentListener(new DocumentListener() {
+
+            void warn(DocumentEvent e) {
+                try {
+                    String text = e.getDocument().getText(0, e.getDocument().getLength());
+                    if (!text.isEmpty()) {
+                        solution.setxInitial(Integer.parseInt(text));
+                        updateChartDataset();
+                    }
+                } catch (BadLocationException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                warn(e);
+            }
+        });
+        yInitialTF.getDocument().addDocumentListener(new DocumentListener() {
+
+            void warn(DocumentEvent e) {
+                try {
+                    String text = e.getDocument().getText(0, e.getDocument().getLength());
+                    if (!text.isEmpty()) {
+                        solution.setyInitial(Integer.parseInt(text));
+                        updateChartDataset();
+                    }
+                } catch (BadLocationException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                warn(e);
+            }
+        });
+        xRightBorderTF.getDocument().addDocumentListener(new DocumentListener() {
+
+            void warn(DocumentEvent e) {
+                try {
+                    String text = e.getDocument().getText(0, e.getDocument().getLength());
+                    if (!text.isEmpty()) {
+                        solution.setRightBorder(Integer.parseInt(text));
+                        updateChartDataset();
+                    }
+                } catch (BadLocationException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                warn(e);
+            }
+        });
+        stepsTF.getDocument().addDocumentListener(new DocumentListener() {
+
+            void warn(DocumentEvent e) {
+                try {
+                    String text = e.getDocument().getText(0, e.getDocument().getLength());
+                    if (!text.isEmpty()) {
+                        solution.setAmountOfSteps(Integer.parseInt(text));
+                        updateChartDataset();
+                    }
+                } catch (BadLocationException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                warn(e);
+            }
+        });
+
 
         JPanel initialCondition = new JPanel(new FlowLayout(FlowLayout.CENTER));
         GroupLayout initialConditionBlock = new GroupLayout(initialCondition);
@@ -162,17 +339,42 @@ class GUI extends JFrame{
     }
 
     private JPanel createCheckBoxesPanel() {
-        JCheckBox ExactCB = new JCheckBox("Exact", true);
-        JCheckBox EulerCB = new JCheckBox("Euler", true);
-        JCheckBox ImprovedEulerCB = new JCheckBox("IE", true);
-        JCheckBox RungeKuttaCB = new JCheckBox("RK", true);
+        JCheckBox exactCB = new JCheckBox("Exact", true);
+        JCheckBox eulerCB = new JCheckBox("Euler", true);
+        JCheckBox improvedEulerCB = new JCheckBox("IE", true);
+        JCheckBox rungeKuttaCB = new JCheckBox("RK", true);
+
+        exactCB.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                updateVisibility(EXACT_KEY, e.getStateChange() == ItemEvent.SELECTED);
+            }
+        });
+        eulerCB.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                updateVisibility(EULER_KEY, e.getStateChange() == ItemEvent.SELECTED);
+            }
+        });
+        improvedEulerCB.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                updateVisibility(IMPROVED_EULER_KEY, e.getStateChange() == ItemEvent.SELECTED);
+            }
+        });
+        rungeKuttaCB.addItemListener(new ItemListener() {
+            @Override
+            public void itemStateChanged(ItemEvent e) {
+                updateVisibility(RUNGE_KUTTA_KEY, e.getStateChange() == ItemEvent.SELECTED);
+            }
+        });
 
         JPanel checkBoxes = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JPanel checkBoxesBlock = new JPanel(new GridLayout(4, 1));
-        checkBoxesBlock.add(ExactCB);
-        checkBoxesBlock.add(EulerCB);
-        checkBoxesBlock.add(ImprovedEulerCB);
-        checkBoxesBlock.add(RungeKuttaCB);
+        checkBoxesBlock.add(exactCB);
+        checkBoxesBlock.add(eulerCB);
+        checkBoxesBlock.add(improvedEulerCB);
+        checkBoxesBlock.add(rungeKuttaCB);
         checkBoxes.add(checkBoxesBlock);
 
         return checkBoxes;
@@ -180,10 +382,14 @@ class GUI extends JFrame{
 
     private XYDataset createDataset() {
         var dataset = new XYSeriesCollection();
-        dataset.addSeries(solution.getExactSolution());
-        dataset.addSeries(solution.getEulerSolution());
-        dataset.addSeries(solution.getImprovedEulerSolution());
-        dataset.addSeries(solution.getRungeKuttaSolution());
+        for (String function : functionsOrder) {
+            switch (function) {
+                case EXACT_KEY -> dataset.addSeries(solution.getExactSolution());
+                case EULER_KEY -> dataset.addSeries(solution.getEulerSolution());
+                case IMPROVED_EULER_KEY -> dataset.addSeries(solution.getImprovedEulerSolution());
+                case RUNGE_KUTTA_KEY -> dataset.addSeries(solution.getRungeKuttaSolution());
+            }
+        }
         return dataset;
     }
 
@@ -210,8 +416,6 @@ class GUI extends JFrame{
         renderer.setSeriesStroke(2, new BasicStroke(2.0f));
         renderer.setSeriesStroke(3, new BasicStroke(2.0f));
 
-        for (int i = 0; i < 4; i++) renderer.setSeriesLinesVisible(i, isVisible[i]);
-
         plot.setRenderer(renderer);
         plot.setBackgroundPaint(Color.white);
 
@@ -229,9 +433,6 @@ class GUI extends JFrame{
     public void createWindow() {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        XYDataset dataset = createDataset();
-        JFreeChart chart = createChart(dataset);
-        ChartPanel chartPanel = new ChartPanel(chart);
         chartPanel.setPreferredSize(new Dimension(500, 500));
 
         Container container = getContentPane();
