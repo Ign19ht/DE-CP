@@ -144,6 +144,14 @@ class DataProvider {
         calculateNewSolutions();
     }
 
+    public void setnMin(int nMin) {
+        this.nMin = nMin;
+    }
+
+    public void setnMax(int nMax) {
+        this.nMax = nMax;
+    }
+
     public XYSeries getExactSolution() {
         return exactSolution;
     }
@@ -163,7 +171,7 @@ class DataProvider {
     public XYSeries getEulerErrorDependsX() {
         var series = new XYSeries("Euler");
         for (int i = 0; i <= amountOfSteps; i++) {
-            series.add(exactSolution.getX(i), Math.abs((double) (exactSolution.getY(i)) - (double) (eulerSolution.getY(i))));
+            series.add(exactSolution.getX(i), Math.abs((double)exactSolution.getY(i) - (double)eulerSolution.getY(i)));
         }
         return series;
     }
@@ -171,7 +179,7 @@ class DataProvider {
     public XYSeries getImprovedEulerErrorDependsX() {
         var series = new XYSeries("Improved Euler");
         for (int i = 0; i <= amountOfSteps; i++) {
-            series.add(exactSolution.getX(i), Math.abs((double) (exactSolution.getY(i)) - (double) (improvedEulerSolution.getY(i))));
+            series.add(exactSolution.getX(i), Math.abs((double)exactSolution.getY(i) - (double)improvedEulerSolution.getY(i)));
         }
         return series;
     }
@@ -179,17 +187,39 @@ class DataProvider {
     public XYSeries getRungeKuttaErrorDependsX() {
         var series = new XYSeries("Runge-Kutta");
         for (int i = 0; i <= amountOfSteps; i++) {
-            series.add(exactSolution.getX(i), Math.abs((double) (exactSolution.getY(i)) - (double) (rungeKuttaSolution.getY(i))));
+            series.add(exactSolution.getX(i), Math.abs((double)exactSolution.getY(i) - (double)rungeKuttaSolution.getY(i)));
         }
         return series;
     }
 
-//    public XYSeries[] getErrorsDependsN() {
-//        var euler = new XYSeries("Euler");
-//        var improvedEuler = new XYSeries("Improved Euler");
-//        var rungeKutta = new XYSeries("Runge-Kutta");
-//
-//    }
+    public XYSeries[] getErrorsDependsN() {
+        var eulerSeries = new XYSeries("Euler");
+        var improvedEulerSeries = new XYSeries("Improved Euler");
+        var rungeKuttaSeries = new XYSeries("Runge-Kutta");
+        for (int n = nMin; n <= nMax; n++) {
+            Solution solution = new Solution(xInitial, yInitial, rightBorder, n);
+            XYSeries exact = solution.getExactSolution();
+            XYSeries euler = solution.getEulerSolution();
+            XYSeries improvedEuler = solution.getImprovedEulerSolution();
+            XYSeries rungeKutta = solution.getRungeKuttaSolution();
+            double eulerErrorMax = 0;
+            double improvedRulerErrorMax = 0;
+            double rungeKuttaErrorMax = 0;
+            for (int i = 0; i <= n; i++) {
+                eulerErrorMax = Math.max(eulerErrorMax, Math.abs((double)exact.getY(i) - (double)euler.getY(i)));
+                improvedRulerErrorMax = Math.max(improvedRulerErrorMax, Math.abs((double)exact.getY(i) - (double)improvedEuler.getY(i)));
+                rungeKuttaErrorMax = Math.max(rungeKuttaErrorMax, Math.abs((double)exact.getY(i) - (double)rungeKutta.getY(i)));
+            }
+            eulerSeries.add(n, eulerErrorMax);
+            improvedEulerSeries.add(n, improvedRulerErrorMax);
+            rungeKuttaSeries.add(n, rungeKuttaErrorMax);
+        }
+        XYSeries[] result = new XYSeries[3];
+        result[0] = eulerSeries;
+        result[1] = improvedEulerSeries;
+        result[2] = rungeKuttaSeries;
+        return result;
+    }
 }
 
 enum PageName {
@@ -470,64 +500,64 @@ class GUI extends JFrame {
                 warn(e);
             }
         });
-//        n0TF.getDocument().addDocumentListener(new DocumentListener() {
-//
-//            void warn(DocumentEvent e) {
-//                try {
-//                    String text = e.getDocument().getText(0, e.getDocument().getLength());
-//                    if (!text.isEmpty()) {
-//                        solution.setAmountOfSteps(Integer.parseInt(text));
-//                        updateChartDataset();
-//                    }
-//                } catch (BadLocationException ex) {
-//                    ex.printStackTrace();
-//                }
-//            }
-//
-//            @Override
-//            public void insertUpdate(DocumentEvent e) {
-//                warn(e);
-//            }
-//
-//            @Override
-//            public void removeUpdate(DocumentEvent e) {
-//                warn(e);
-//            }
-//
-//            @Override
-//            public void changedUpdate(DocumentEvent e) {
-//                warn(e);
-//            }
-//        });
-//        nMaxTF.getDocument().addDocumentListener(new DocumentListener() {
-//
-//            void warn(DocumentEvent e) {
-//                try {
-//                    String text = e.getDocument().getText(0, e.getDocument().getLength());
-//                    if (!text.isEmpty()) {
-//                        solution.setAmountOfSteps(Integer.parseInt(text));
-//                        updateChartDataset();
-//                    }
-//                } catch (BadLocationException ex) {
-//                    ex.printStackTrace();
-//                }
-//            }
-//
-//            @Override
-//            public void insertUpdate(DocumentEvent e) {
-//                warn(e);
-//            }
-//
-//            @Override
-//            public void removeUpdate(DocumentEvent e) {
-//                warn(e);
-//            }
-//
-//            @Override
-//            public void changedUpdate(DocumentEvent e) {
-//                warn(e);
-//            }
-//        });
+        n0TF.getDocument().addDocumentListener(new DocumentListener() {
+
+            void warn(DocumentEvent e) {
+                try {
+                    String text = e.getDocument().getText(0, e.getDocument().getLength());
+                    if (!text.isEmpty()) {
+                        dataProvider.setnMin(Integer.parseInt(text));
+                        updateChartDataset();
+                    }
+                } catch (BadLocationException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                warn(e);
+            }
+        });
+        nMaxTF.getDocument().addDocumentListener(new DocumentListener() {
+
+            void warn(DocumentEvent e) {
+                try {
+                    String text = e.getDocument().getText(0, e.getDocument().getLength());
+                    if (!text.isEmpty()) {
+                        dataProvider.setnMax(Integer.parseInt(text));
+                        updateChartDataset();
+                    }
+                } catch (BadLocationException ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                warn(e);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                warn(e);
+            }
+        });
 
 
         JPanel initialCondition = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -648,6 +678,17 @@ class GUI extends JFrame {
                         case EULER_KEY -> dataset.addSeries(dataProvider.getEulerErrorDependsX());
                         case IMPROVED_EULER_KEY -> dataset.addSeries(dataProvider.getImprovedEulerErrorDependsX());
                         case RUNGE_KUTTA_KEY -> dataset.addSeries(dataProvider.getRungeKuttaErrorDependsX());
+                    }
+                }
+            }
+            case ErrorsN -> {
+                XYSeries[] data = dataProvider.getErrorsDependsN();
+                for (String function : functionsOrder) {
+                    switch (function) {
+                        case EXACT_KEY -> dataset.addSeries(dataProvider.getExactSolution());
+                        case EULER_KEY -> dataset.addSeries(data[0]);
+                        case IMPROVED_EULER_KEY -> dataset.addSeries(data[1]);
+                        case RUNGE_KUTTA_KEY -> dataset.addSeries(data[2]);
                     }
                 }
             }
