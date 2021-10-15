@@ -21,55 +21,126 @@ import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
 class Solution {
-    private double rightBorder;
+    private final double xInitial;
+    private final double yInitial;
+    private final int amountOfSteps;
+    private final double h;
+    private final double parameter;
+
+    public Solution(double xInitial, double yInitial, double rightBorder, int amountOfSteps) {
+        this.xInitial = xInitial;
+        this.yInitial = yInitial;
+        this.amountOfSteps = amountOfSteps;
+        h = (rightBorder - xInitial) / amountOfSteps;
+        parameter = (yInitial - Math.exp(xInitial)) / Math.exp(-xInitial);
+    }
+
+    private double f(double x, double y) {
+        return 2 * Math.exp(x) - y;
+    }
+
+    public XYSeries getExactSolution() {
+        var series = new XYSeries("Exact");
+        double x = xInitial;
+        for (int i = 0; i <= amountOfSteps; i++) {
+            series.add(x, Math.exp(x) + parameter * Math.exp(-x));
+            x += h;
+        }
+        return series;
+    }
+
+    public XYSeries getEulerSolution() {
+        var series = new XYSeries("Euler");
+        double x = xInitial;
+        double y = yInitial;
+        series.add(x, y);
+        for (int i = 1; i <= amountOfSteps; i++) {
+            y += h * f(x, y);
+            x += h;
+            series.add(x, y);
+        }
+        return series;
+    }
+
+    public XYSeries getImprovedEulerSolution() {
+        var series = new XYSeries("Improved Euler");
+        double x = xInitial;
+        double y = yInitial;
+        series.add(x, y);
+        for (int i = 1; i <= amountOfSteps; i++) {
+            y += h * f(x + h / 2, y + h * f(x, y) / 2);
+            x += h;
+            series.add(x, y);
+        }
+        return series;
+    }
+
+    public XYSeries getRungeKuttaSolution() {
+        var series = new XYSeries("Runge-Kutta");
+        double x = xInitial;
+        double y = yInitial;
+        series.add(x, y);
+        for (int i = 1; i <= amountOfSteps; i++) {
+            double k1 = f(x, y);
+            double k2 = f(x + h / 2, y + h * k1 / 2);
+            double k3 = f(x + h / 2, y + h * k2 / 2);
+            double k4 = f(x + h, y + h * k3);
+            y += h * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+            x += h;
+            series.add(x, y);
+        }
+        return series;
+    }
+}
+
+class DataProvider {
     private double xInitial;
     private double yInitial;
+    private double rightBorder;
     private int amountOfSteps;
-    private int stepsMin;
-    private int stepsMax;
-    private double h;
-    private double parameter;
+    private int nMin;
+    private int nMax;
 
     private XYSeries exactSolution;
     private XYSeries eulerSolution;
     private XYSeries improvedEulerSolution;
     private XYSeries rungeKuttaSolution;
 
-    public Solution() {
-        rightBorder = 7.;
-        xInitial = 0.;
-        yInitial = 0.;
-        amountOfSteps = 15;
-        stepsMin = 10;
-        stepsMax = 20;
-        h = (rightBorder - xInitial) / amountOfSteps;
-        calculateParameter();
+    public DataProvider() {
+        xInitial = 0;
+        yInitial = 0;
+        rightBorder = 7;
+        amountOfSteps = 10;
+        nMin = 10;
+        nMax = 20;
         calculateNewSolutions();
+    }
+
+    private void calculateNewSolutions() {
+        Solution solution = new Solution(xInitial, yInitial, rightBorder, amountOfSteps);
+        exactSolution = solution.getExactSolution();
+        eulerSolution = solution.getEulerSolution();
+        improvedEulerSolution = solution.getImprovedEulerSolution();
+        rungeKuttaSolution = solution.getRungeKuttaSolution();
     }
 
     public void setRightBorder(double rightBorder) {
         this.rightBorder = rightBorder;
-        h = (rightBorder - xInitial) / amountOfSteps;
         calculateNewSolutions();
     }
 
     public void setxInitial(double xInitial) {
         this.xInitial = xInitial;
-        h = (rightBorder - xInitial) / amountOfSteps;
-        calculateParameter();
         calculateNewSolutions();
     }
 
     public void setyInitial(double yInitial) {
         this.yInitial = yInitial;
-        h = (rightBorder - xInitial) / amountOfSteps;
-        calculateParameter();
         calculateNewSolutions();
     }
 
     public void setAmountOfSteps(int amountOfSteps) {
         this.amountOfSteps = amountOfSteps;
-        h = (rightBorder - xInitial) / amountOfSteps;
         calculateNewSolutions();
     }
 
@@ -87,70 +158,6 @@ class Solution {
 
     public XYSeries getRungeKuttaSolution() {
         return rungeKuttaSolution;
-    }
-
-    private void calculateNewSolutions() {
-        calculateExactSolution();
-        calculateEulerSolution();
-        calculateImprovedEulerSolution();
-        calculateRungeKuttaSolution();
-    }
-
-    private double f(double x, double y) {
-        return 2 * Math.exp(x) - y;
-    }
-
-    private void calculateParameter() {
-        parameter = (yInitial - Math.exp(xInitial)) / Math.exp(-xInitial);
-    }
-
-    private void calculateExactSolution() {
-        exactSolution = new XYSeries("Exact");
-        double x = xInitial;
-        for (int i = 0; i <= amountOfSteps; i++) {
-            exactSolution.add(x, Math.exp(x) + parameter * Math.exp(-x));
-            x += h;
-        }
-    }
-
-    private void calculateEulerSolution() {
-        eulerSolution = new XYSeries("Euler");
-        double x = xInitial;
-        double y = yInitial;
-        eulerSolution.add(x, y);
-        for (int i = 1; i <= amountOfSteps; i++) {
-            y += h * f(x, y);
-            x += h;
-            eulerSolution.add(x, y);
-        }
-    }
-
-    private void calculateImprovedEulerSolution() {
-        improvedEulerSolution = new XYSeries("Improved Euler");
-        double x = xInitial;
-        double y = yInitial;
-        improvedEulerSolution.add(x, y);
-        for (int i = 1; i <= amountOfSteps; i++) {
-            y += h * f(x + h / 2, y + h * f(x, y) / 2);
-            x += h;
-            improvedEulerSolution.add(x, y);
-        }
-    }
-
-    private void calculateRungeKuttaSolution() {
-        rungeKuttaSolution = new XYSeries("Runge-Kutta");
-        double x = xInitial;
-        double y = yInitial;
-        rungeKuttaSolution.add(x, y);
-        for (int i = 1; i <= amountOfSteps; i++) {
-            double k1 = f(x, y);
-            double k2 = f(x + h / 2, y + h * k1 / 2);
-            double k3 = f(x + h / 2, y + h * k2 / 2);
-            double k4 = f(x + h, y + h * k3);
-            y += h * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
-            x += h;
-            rungeKuttaSolution.add(x, y);
-        }
     }
 
     public XYSeries getEulerErrorDependsX() {
@@ -178,6 +185,9 @@ class Solution {
     }
 
 //    public XYSeries[] getErrorsDependsN() {
+//        var euler = new XYSeries("Euler");
+//        var improvedEuler = new XYSeries("Improved Euler");
+//        var rungeKutta = new XYSeries("Runge-Kutta");
 //
 //    }
 }
@@ -207,12 +217,7 @@ class GUI extends JFrame {
     private final String N0_LABEL_KEY = "n0LabelKey";
     private final String N_MAX_TF_KEY = "nMaxTFKey";
     private final String N_MAX_LABEL_KEY = "nMaxLabelKey";
-    private final String X_AXIS_LABEL_X = "X";
-    private final String X_AXIS_LABEL_N = "N";
-    private final String Y_AXIS_LABEL_Y = "Y(x)";
-    private final String Y_AXIS_LABEL_ERROR_X = "E(x)";
-    private final String Y_AXIS_LABEL_ERROR_N = "E(n)";
-    private final Solution solution;
+    private final DataProvider dataProvider;
 
     private XYDataset dataset;
     private ChartPanel chartPanel;
@@ -223,8 +228,8 @@ class GUI extends JFrame {
 
     ArrayList<String> functionsOrder = new ArrayList<>();
 
-    public GUI(Solution solution) {
-        this.solution = solution;
+    public GUI() {
+        dataProvider = new DataProvider();
         functionsOrder.add(EXACT_KEY);
         functionsOrder.add(EULER_KEY);
         functionsOrder.add(IMPROVED_EULER_KEY);
@@ -252,18 +257,18 @@ class GUI extends JFrame {
         boolean isVisible = true;
         switch (currentPage) {
             case Functions -> {
-                xLabel = X_AXIS_LABEL_X;
-                yLabel = Y_AXIS_LABEL_Y;
+                xLabel = "X";;
+                yLabel = "Y";
                 isVisible = ((JCheckBox) checkBoxesPanel.getClientProperty(EXACT_CB_KEY)).isSelected();
             }
             case ErrorsX -> {
-                xLabel = X_AXIS_LABEL_X;
-                yLabel = Y_AXIS_LABEL_ERROR_X;
+                xLabel = "X";
+                yLabel = "E(x)";
                 isVisible = false;
             }
             case ErrorsN -> {
-                xLabel = X_AXIS_LABEL_N;
-                yLabel = Y_AXIS_LABEL_ERROR_N;
+                xLabel = "N";
+                yLabel = "E(n)";
                 isVisible = false;
             }
         }
@@ -355,7 +360,7 @@ class GUI extends JFrame {
                 try {
                     String text = e.getDocument().getText(0, e.getDocument().getLength());
                     if (!text.isEmpty()) {
-                        solution.setxInitial(Double.parseDouble(text));
+                        dataProvider.setxInitial(Double.parseDouble(text));
                         updateChartDataset();
                     }
                 } catch (BadLocationException ex) {
@@ -384,7 +389,7 @@ class GUI extends JFrame {
                 try {
                     String text = e.getDocument().getText(0, e.getDocument().getLength());
                     if (!text.isEmpty()) {
-                        solution.setyInitial(Double.parseDouble(text));
+                        dataProvider.setyInitial(Double.parseDouble(text));
                         updateChartDataset();
                     }
                 } catch (BadLocationException ex) {
@@ -413,7 +418,7 @@ class GUI extends JFrame {
                 try {
                     String text = e.getDocument().getText(0, e.getDocument().getLength());
                     if (!text.isEmpty()) {
-                        solution.setRightBorder(Double.parseDouble(text));
+                        dataProvider.setRightBorder(Double.parseDouble(text));
                         updateChartDataset();
                     }
                 } catch (BadLocationException ex) {
@@ -442,7 +447,7 @@ class GUI extends JFrame {
                 try {
                     String text = e.getDocument().getText(0, e.getDocument().getLength());
                     if (!text.isEmpty()) {
-                        solution.setAmountOfSteps(Integer.parseInt(text));
+                        dataProvider.setAmountOfSteps(Integer.parseInt(text));
                         updateChartDataset();
                     }
                 } catch (BadLocationException ex) {
@@ -629,20 +634,20 @@ class GUI extends JFrame {
             case Functions -> {
                 for (String function : functionsOrder) {
                     switch (function) {
-                        case EXACT_KEY -> dataset.addSeries(solution.getExactSolution());
-                        case EULER_KEY -> dataset.addSeries(solution.getEulerSolution());
-                        case IMPROVED_EULER_KEY -> dataset.addSeries(solution.getImprovedEulerSolution());
-                        case RUNGE_KUTTA_KEY -> dataset.addSeries(solution.getRungeKuttaSolution());
+                        case EXACT_KEY -> dataset.addSeries(dataProvider.getExactSolution());
+                        case EULER_KEY -> dataset.addSeries(dataProvider.getEulerSolution());
+                        case IMPROVED_EULER_KEY -> dataset.addSeries(dataProvider.getImprovedEulerSolution());
+                        case RUNGE_KUTTA_KEY -> dataset.addSeries(dataProvider.getRungeKuttaSolution());
                     }
                 }
             }
             case ErrorsX -> {
                 for (String function : functionsOrder) {
                     switch (function) {
-                        case EXACT_KEY -> dataset.addSeries(solution.getExactSolution());
-                        case EULER_KEY -> dataset.addSeries(solution.getEulerErrorDependsX());
-                        case IMPROVED_EULER_KEY -> dataset.addSeries(solution.getImprovedEulerErrorDependsX());
-                        case RUNGE_KUTTA_KEY -> dataset.addSeries(solution.getRungeKuttaErrorDependsX());
+                        case EXACT_KEY -> dataset.addSeries(dataProvider.getExactSolution());
+                        case EULER_KEY -> dataset.addSeries(dataProvider.getEulerErrorDependsX());
+                        case IMPROVED_EULER_KEY -> dataset.addSeries(dataProvider.getImprovedEulerErrorDependsX());
+                        case RUNGE_KUTTA_KEY -> dataset.addSeries(dataProvider.getRungeKuttaErrorDependsX());
                     }
                 }
             }
@@ -715,8 +720,7 @@ class GUI extends JFrame {
 
 public class Main {
     public static void main(String[] args) {
-        Solution solution = new Solution();
-        GUI gui = new GUI(solution);
+        GUI gui = new GUI();
         gui.createWindow();
     }
 }
