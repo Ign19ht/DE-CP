@@ -25,6 +25,8 @@ class Solution {
     private double xInitial;
     private double yInitial;
     private int amountOfSteps;
+    private int stepsMin;
+    private int stepsMax;
     private double h;
     private double parameter;
 
@@ -38,34 +40,37 @@ class Solution {
         xInitial = 0.;
         yInitial = 0.;
         amountOfSteps = 15;
+        stepsMin = 10;
+        stepsMax = 20;
         h = (rightBorder - xInitial) / amountOfSteps;
         calculateParameter();
+        calculateNewSolutions();
     }
 
     public void setRightBorder(double rightBorder) {
         this.rightBorder = rightBorder;
         h = (rightBorder - xInitial) / amountOfSteps;
-        calculateNewData();
+        calculateNewSolutions();
     }
 
     public void setxInitial(double xInitial) {
         this.xInitial = xInitial;
         h = (rightBorder - xInitial) / amountOfSteps;
         calculateParameter();
-        calculateNewData();
+        calculateNewSolutions();
     }
 
     public void setyInitial(double yInitial) {
         this.yInitial = yInitial;
         h = (rightBorder - xInitial) / amountOfSteps;
         calculateParameter();
-        calculateNewData();
+        calculateNewSolutions();
     }
 
     public void setAmountOfSteps(int amountOfSteps) {
         this.amountOfSteps = amountOfSteps;
         h = (rightBorder - xInitial) / amountOfSteps;
-        calculateNewData();
+        calculateNewSolutions();
     }
 
     public XYSeries getExactSolution() {
@@ -84,7 +89,7 @@ class Solution {
         return rungeKuttaSolution;
     }
 
-    private void calculateNewData() {
+    private void calculateNewSolutions() {
         calculateExactSolution();
         calculateEulerSolution();
         calculateImprovedEulerSolution();
@@ -94,7 +99,7 @@ class Solution {
     private double f(double x, double y) {
         return 2 * Math.exp(x) - y;
     }
-    
+
     private void calculateParameter() {
         parameter = (yInitial - Math.exp(xInitial)) / Math.exp(-xInitial);
     }
@@ -148,10 +153,31 @@ class Solution {
         }
     }
 
-//    public XYSeries getEulerErrorDependsX() {
-//        var series = new XYSeries("Exact");
-//        exactSolution = getExactSolution();
-//        XYSeries eulerSolution = getEulerSolution();
+    public XYSeries getEulerErrorDependsX() {
+        var series = new XYSeries("Euler");
+        for (int i = 0; i <= amountOfSteps; i++) {
+            series.add(exactSolution.getX(i), Math.abs((double) (exactSolution.getY(i)) - (double) (eulerSolution.getY(i))));
+        }
+        return series;
+    }
+
+    public XYSeries getImprovedEulerErrorDependsX() {
+        var series = new XYSeries("Improved Euler");
+        for (int i = 0; i <= amountOfSteps; i++) {
+            series.add(exactSolution.getX(i), Math.abs((double) (exactSolution.getY(i)) - (double) (improvedEulerSolution.getY(i))));
+        }
+        return series;
+    }
+
+    public XYSeries getRungeKuttaErrorDependsX() {
+        var series = new XYSeries("Runge-Kutta");
+        for (int i = 0; i <= amountOfSteps; i++) {
+            series.add(exactSolution.getX(i), Math.abs((double) (exactSolution.getY(i)) - (double) (rungeKuttaSolution.getY(i))));
+        }
+        return series;
+    }
+
+//    public XYSeries[] getErrorsDependsN() {
 //
 //    }
 }
@@ -162,7 +188,7 @@ enum PageName {
     ErrorsN
 }
 
-class GUI extends JFrame{
+class GUI extends JFrame {
 
     private final String EXACT_KEY = "exactKey";
     private final String EULER_KEY = "eulerKey";
@@ -208,37 +234,42 @@ class GUI extends JFrame{
     }
 
     private void setPageSettings() {
-        ((JCheckBox)checkBoxesPanel.getClientProperty(EXACT_CB_KEY)).setVisible(currentPage == PageName.Functions);
-        ((JButton)pagesPanel.getClientProperty(PAGE1_BUTTON_KEY)).setEnabled(currentPage != PageName.Functions);
-        ((JButton)pagesPanel.getClientProperty(PAGE2_BUTTON_KEY)).setEnabled(currentPage != PageName.ErrorsX);
-        ((JButton)pagesPanel.getClientProperty(PAGE3_BUTTON_KEY)).setEnabled(currentPage != PageName.ErrorsN);
-        ((JTextField)initialConditionsPanel.getClientProperty(X_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
-        ((JTextField)initialConditionsPanel.getClientProperty(Y_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
-        ((JTextField)initialConditionsPanel.getClientProperty(X_RIGHT_BOUND_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
-        ((JTextField)initialConditionsPanel.getClientProperty(STEPS_TF_KEY)).setVisible(currentPage != PageName.ErrorsN);
-        ((JTextField)initialConditionsPanel.getClientProperty(N0_TF_KEY)).setVisible(currentPage == PageName.ErrorsN);
-        ((JTextField)initialConditionsPanel.getClientProperty(N_MAX_TF_KEY)).setVisible(currentPage == PageName.ErrorsN);
-        ((JLabel)initialConditionsPanel.getClientProperty(STEPS_LABEL_KEY)).setVisible(currentPage != PageName.ErrorsN);
-        ((JLabel)initialConditionsPanel.getClientProperty(N0_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
-        ((JLabel)initialConditionsPanel.getClientProperty(N_MAX_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
+        ((JCheckBox) checkBoxesPanel.getClientProperty(EXACT_CB_KEY)).setVisible(currentPage == PageName.Functions);
+        ((JButton) pagesPanel.getClientProperty(PAGE1_BUTTON_KEY)).setEnabled(currentPage != PageName.Functions);
+        ((JButton) pagesPanel.getClientProperty(PAGE2_BUTTON_KEY)).setEnabled(currentPage != PageName.ErrorsX);
+        ((JButton) pagesPanel.getClientProperty(PAGE3_BUTTON_KEY)).setEnabled(currentPage != PageName.ErrorsN);
+        ((JTextField) initialConditionsPanel.getClientProperty(X_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
+        ((JTextField) initialConditionsPanel.getClientProperty(Y_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
+        ((JTextField) initialConditionsPanel.getClientProperty(X_RIGHT_BOUND_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
+        ((JTextField) initialConditionsPanel.getClientProperty(STEPS_TF_KEY)).setVisible(currentPage != PageName.ErrorsN);
+        ((JTextField) initialConditionsPanel.getClientProperty(N0_TF_KEY)).setVisible(currentPage == PageName.ErrorsN);
+        ((JTextField) initialConditionsPanel.getClientProperty(N_MAX_TF_KEY)).setVisible(currentPage == PageName.ErrorsN);
+        ((JLabel) initialConditionsPanel.getClientProperty(STEPS_LABEL_KEY)).setVisible(currentPage != PageName.ErrorsN);
+        ((JLabel) initialConditionsPanel.getClientProperty(N0_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
+        ((JLabel) initialConditionsPanel.getClientProperty(N_MAX_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
         String xLabel = "";
         String yLabel = "";
+        boolean isVisible = true;
         switch (currentPage) {
             case Functions -> {
                 xLabel = X_AXIS_LABEL_X;
                 yLabel = Y_AXIS_LABEL_Y;
+                isVisible = ((JCheckBox) checkBoxesPanel.getClientProperty(EXACT_CB_KEY)).isSelected();
             }
             case ErrorsX -> {
                 xLabel = X_AXIS_LABEL_X;
                 yLabel = Y_AXIS_LABEL_ERROR_X;
+                isVisible = false;
             }
             case ErrorsN -> {
                 xLabel = X_AXIS_LABEL_N;
                 yLabel = Y_AXIS_LABEL_ERROR_N;
+                isVisible = false;
             }
         }
         chartPanel.getChart().getXYPlot().getDomainAxis().setLabel(xLabel);
         chartPanel.getChart().getXYPlot().getRangeAxis().setLabel(yLabel);
+        chartPanel.getChart().getXYPlot().getRenderer().setSeriesVisible(functionsOrder.indexOf(EXACT_KEY), isVisible);
     }
 
     private void updateChartDataset() {
@@ -262,6 +293,7 @@ class GUI extends JFrame{
             public void actionPerformed(ActionEvent e) {
                 currentPage = PageName.Functions;
                 setPageSettings();
+                updateChartDataset();
             }
         });
         page2Button.addActionListener(new ActionListener() {
@@ -269,6 +301,7 @@ class GUI extends JFrame{
             public void actionPerformed(ActionEvent e) {
                 currentPage = PageName.ErrorsX;
                 setPageSettings();
+                updateChartDataset();
             }
         });
         page3Button.addActionListener(new ActionListener() {
@@ -276,6 +309,7 @@ class GUI extends JFrame{
             public void actionPerformed(ActionEvent e) {
                 currentPage = PageName.ErrorsN;
                 setPageSettings();
+                updateChartDataset();
             }
         });
 
@@ -308,12 +342,12 @@ class GUI extends JFrame{
         JTextField n0TF = new JTextField("10");
         JTextField nMaxTF = new JTextField("20");
 
-        xInitialTF.setMinimumSize(new Dimension(30,20));
-        xRightBorderTF.setMinimumSize(new Dimension(30,20));
-        stepsTF.setMinimumSize(new Dimension(30,20));
-        yInitialTF.setMinimumSize(new Dimension(30,20));
-        n0TF.setMinimumSize(new Dimension(30,20));
-        nMaxTF.setMinimumSize(new Dimension(30,20));
+        xInitialTF.setMinimumSize(new Dimension(30, 20));
+        xRightBorderTF.setMinimumSize(new Dimension(30, 20));
+        stepsTF.setMinimumSize(new Dimension(30, 20));
+        yInitialTF.setMinimumSize(new Dimension(30, 20));
+        n0TF.setMinimumSize(new Dimension(30, 20));
+        nMaxTF.setMinimumSize(new Dimension(30, 20));
 
         xInitialTF.getDocument().addDocumentListener(new DocumentListener() {
 
@@ -591,12 +625,26 @@ class GUI extends JFrame{
 
     private XYDataset createDataset() {
         var dataset = new XYSeriesCollection();
-        for (String function : functionsOrder) {
-            switch (function) {
-                case EXACT_KEY -> dataset.addSeries(solution.getExactSolution());
-                case EULER_KEY -> dataset.addSeries(solution.getEulerSolution());
-                case IMPROVED_EULER_KEY -> dataset.addSeries(solution.getImprovedEulerSolution());
-                case RUNGE_KUTTA_KEY -> dataset.addSeries(solution.getRungeKuttaSolution());
+        switch (currentPage) {
+            case Functions -> {
+                for (String function : functionsOrder) {
+                    switch (function) {
+                        case EXACT_KEY -> dataset.addSeries(solution.getExactSolution());
+                        case EULER_KEY -> dataset.addSeries(solution.getEulerSolution());
+                        case IMPROVED_EULER_KEY -> dataset.addSeries(solution.getImprovedEulerSolution());
+                        case RUNGE_KUTTA_KEY -> dataset.addSeries(solution.getRungeKuttaSolution());
+                    }
+                }
+            }
+            case ErrorsX -> {
+                for (String function : functionsOrder) {
+                    switch (function) {
+                        case EXACT_KEY -> dataset.addSeries(solution.getExactSolution());
+                        case EULER_KEY -> dataset.addSeries(solution.getEulerErrorDependsX());
+                        case IMPROVED_EULER_KEY -> dataset.addSeries(solution.getImprovedEulerErrorDependsX());
+                        case RUNGE_KUTTA_KEY -> dataset.addSeries(solution.getRungeKuttaErrorDependsX());
+                    }
+                }
             }
         }
         return dataset;
