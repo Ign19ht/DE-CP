@@ -32,7 +32,6 @@ class Solution {
     private XYSeries eulerSolution;
     private XYSeries improvedEulerSolution;
     private XYSeries rungeKuttaSolution;
-    private boolean isValid;
 
     public Solution() {
         rightBorder = 7.;
@@ -40,8 +39,56 @@ class Solution {
         yInitial = 0.;
         amountOfSteps = 15;
         h = (rightBorder - xInitial) / amountOfSteps;
-        isValid = false;
         calculateParameter();
+    }
+
+    public void setRightBorder(double rightBorder) {
+        this.rightBorder = rightBorder;
+        h = (rightBorder - xInitial) / amountOfSteps;
+        calculateNewData();
+    }
+
+    public void setxInitial(double xInitial) {
+        this.xInitial = xInitial;
+        h = (rightBorder - xInitial) / amountOfSteps;
+        calculateParameter();
+        calculateNewData();
+    }
+
+    public void setyInitial(double yInitial) {
+        this.yInitial = yInitial;
+        h = (rightBorder - xInitial) / amountOfSteps;
+        calculateParameter();
+        calculateNewData();
+    }
+
+    public void setAmountOfSteps(int amountOfSteps) {
+        this.amountOfSteps = amountOfSteps;
+        h = (rightBorder - xInitial) / amountOfSteps;
+        calculateNewData();
+    }
+
+    public XYSeries getExactSolution() {
+        return exactSolution;
+    }
+
+    public XYSeries getEulerSolution() {
+        return eulerSolution;
+    }
+
+    public XYSeries getImprovedEulerSolution() {
+        return improvedEulerSolution;
+    }
+
+    public XYSeries getRungeKuttaSolution() {
+        return rungeKuttaSolution;
+    }
+
+    private void calculateNewData() {
+        calculateExactSolution();
+        calculateEulerSolution();
+        calculateImprovedEulerSolution();
+        calculateRungeKuttaSolution();
     }
 
     private double f(double x, double y) {
@@ -52,41 +99,16 @@ class Solution {
         parameter = (yInitial - Math.exp(xInitial)) / Math.exp(-xInitial);
     }
 
-    public void setRightBorder(double rightBorder) {
-        this.rightBorder = rightBorder;
-        h = (rightBorder - xInitial) / amountOfSteps;
-    }
-
-    public void setxInitial(double xInitial) {
-        this.xInitial = xInitial;
-        h = (rightBorder - xInitial) / amountOfSteps;
-        calculateParameter();
-    }
-
-    public void setyInitial(double yInitial) {
-        this.yInitial = yInitial;
-        h = (rightBorder - xInitial) / amountOfSteps;
-        calculateParameter();
-    }
-
-    public void setAmountOfSteps(int amountOfSteps) {
-        this.amountOfSteps = amountOfSteps;
-        h = (rightBorder - xInitial) / amountOfSteps;
-    }
-
-    public XYSeries getExactSolution() {
-        if (isValid) return exactSolution;
+    private void calculateExactSolution() {
         exactSolution = new XYSeries("Exact");
         double x = xInitial;
         for (int i = 0; i <= amountOfSteps; i++) {
             exactSolution.add(x, Math.exp(x) + parameter * Math.exp(-x));
             x += h;
         }
-        return exactSolution;
     }
 
-    public XYSeries getEulerSolution() {
-        if (isValid) return eulerSolution;
+    private void calculateEulerSolution() {
         eulerSolution = new XYSeries("Euler");
         double x = xInitial;
         double y = yInitial;
@@ -96,11 +118,9 @@ class Solution {
             x += h;
             eulerSolution.add(x, y);
         }
-        return eulerSolution;
     }
 
-    public XYSeries getImprovedEulerSolution() {
-        if (isValid) return improvedEulerSolution;
+    private void calculateImprovedEulerSolution() {
         improvedEulerSolution = new XYSeries("Improved Euler");
         double x = xInitial;
         double y = yInitial;
@@ -110,11 +130,9 @@ class Solution {
             x += h;
             improvedEulerSolution.add(x, y);
         }
-        return improvedEulerSolution;
     }
 
-    public XYSeries getRungeKuttaSolution() {
-        if (isValid) return rungeKuttaSolution;
+    private void calculateRungeKuttaSolution() {
         rungeKuttaSolution = new XYSeries("Runge-Kutta");
         double x = xInitial;
         double y = yInitial;
@@ -128,14 +146,14 @@ class Solution {
             x += h;
             rungeKuttaSolution.add(x, y);
         }
-        return rungeKuttaSolution;
     }
 
-    public XYSeries getEulerErrorDependsX() {
-        var series = new XYSeries("Exact");
-        XYSeries eulerSolution = getEulerSolution();
-
-    }
+//    public XYSeries getEulerErrorDependsX() {
+//        var series = new XYSeries("Exact");
+//        exactSolution = getExactSolution();
+//        XYSeries eulerSolution = getEulerSolution();
+//
+//    }
 }
 
 enum PageName {
