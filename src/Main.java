@@ -28,12 +28,19 @@ class Solution {
     private double h;
     private double parameter;
 
+    private XYSeries exactSolution;
+    private XYSeries eulerSolution;
+    private XYSeries improvedEulerSolution;
+    private XYSeries rungeKuttaSolution;
+    private boolean isValid;
+
     public Solution() {
         rightBorder = 7.;
         xInitial = 0.;
         yInitial = 0.;
         amountOfSteps = 15;
         h = (rightBorder - xInitial) / amountOfSteps;
+        isValid = false;
         calculateParameter();
     }
 
@@ -68,46 +75,50 @@ class Solution {
     }
 
     public XYSeries getExactSolution() {
-        var series = new XYSeries("Exact");
+        if (isValid) return exactSolution;
+        exactSolution = new XYSeries("Exact");
         double x = xInitial;
         for (int i = 0; i <= amountOfSteps; i++) {
-            series.add(x, Math.exp(x) + parameter * Math.exp(-x));
+            exactSolution.add(x, Math.exp(x) + parameter * Math.exp(-x));
             x += h;
         }
-        return series;
+        return exactSolution;
     }
 
     public XYSeries getEulerSolution() {
-        var series = new XYSeries("Euler");
+        if (isValid) return eulerSolution;
+        eulerSolution = new XYSeries("Euler");
         double x = xInitial;
         double y = yInitial;
-        series.add(x, y);
+        eulerSolution.add(x, y);
         for (int i = 1; i <= amountOfSteps; i++) {
             y += h * f(x, y);
             x += h;
-            series.add(x, y);
+            eulerSolution.add(x, y);
         }
-        return series;
+        return eulerSolution;
     }
 
     public XYSeries getImprovedEulerSolution() {
-        var series = new XYSeries("Improved Euler");
+        if (isValid) return improvedEulerSolution;
+        improvedEulerSolution = new XYSeries("Improved Euler");
         double x = xInitial;
         double y = yInitial;
-        series.add(x, y);
+        improvedEulerSolution.add(x, y);
         for (int i = 1; i <= amountOfSteps; i++) {
             y += h * f(x + h / 2, y + h * f(x, y) / 2);
             x += h;
-            series.add(x, y);
+            improvedEulerSolution.add(x, y);
         }
-        return series;
+        return improvedEulerSolution;
     }
 
     public XYSeries getRungeKuttaSolution() {
-        var series = new XYSeries("Runge-Kutta");
+        if (isValid) return rungeKuttaSolution;
+        rungeKuttaSolution = new XYSeries("Runge-Kutta");
         double x = xInitial;
         double y = yInitial;
-        series.add(x, y);
+        rungeKuttaSolution.add(x, y);
         for (int i = 1; i <= amountOfSteps; i++) {
             double k1 = f(x, y);
             double k2 = f(x + h / 2, y + h * k1 / 2);
@@ -115,9 +126,15 @@ class Solution {
             double k4 = f(x + h, y + h * k3);
             y += h * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
             x += h;
-            series.add(x, y);
+            rungeKuttaSolution.add(x, y);
         }
-        return series;
+        return rungeKuttaSolution;
+    }
+
+    public XYSeries getEulerErrorDependsX() {
+        var series = new XYSeries("Exact");
+        XYSeries eulerSolution = getEulerSolution();
+
     }
 }
 
@@ -146,6 +163,11 @@ class GUI extends JFrame{
     private final String N0_LABEL_KEY = "n0LabelKey";
     private final String N_MAX_TF_KEY = "nMaxTFKey";
     private final String N_MAX_LABEL_KEY = "nMaxLabelKey";
+    private final String X_AXIS_LABEL_X = "X";
+    private final String X_AXIS_LABEL_N = "N";
+    private final String Y_AXIS_LABEL_Y = "Y(x)";
+    private final String Y_AXIS_LABEL_ERROR_X = "E(x)";
+    private final String Y_AXIS_LABEL_ERROR_N = "E(n)";
     private final Solution solution;
 
     private XYDataset dataset;
@@ -181,6 +203,35 @@ class GUI extends JFrame{
         ((JLabel)initialConditionsPanel.getClientProperty(STEPS_LABEL_KEY)).setVisible(currentPage != PageName.ErrorsN);
         ((JLabel)initialConditionsPanel.getClientProperty(N0_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
         ((JLabel)initialConditionsPanel.getClientProperty(N_MAX_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
+        String xLabel = "";
+        String yLabel = "";
+        switch (currentPage) {
+            case Functions -> {
+                xLabel = X_AXIS_LABEL_X;
+                yLabel = Y_AXIS_LABEL_Y;
+            }
+            case ErrorsX -> {
+                xLabel = X_AXIS_LABEL_X;
+                yLabel = Y_AXIS_LABEL_ERROR_X;
+            }
+            case ErrorsN -> {
+                xLabel = X_AXIS_LABEL_N;
+                yLabel = Y_AXIS_LABEL_ERROR_N;
+            }
+        }
+        chartPanel.getChart().getXYPlot().getDomainAxis().setLabel(xLabel);
+        chartPanel.getChart().getXYPlot().getRangeAxis().setLabel(yLabel);
+    }
+
+    private void updateChartDataset() {
+        dataset = createDataset();
+        chartPanel.getChart().getXYPlot().setDataset(dataset);
+        chartPanel.repaint();
+    }
+
+    private void updateGraphVisibility(String key, boolean isVisible) {
+        chartPanel.getChart().getXYPlot().getRenderer().setSeriesVisible(functionsOrder.indexOf(key), isVisible);
+        chartPanel.repaint();
     }
 
     private JPanel createPagesPanel() {
@@ -222,17 +273,6 @@ class GUI extends JFrame{
         pages.putClientProperty(PAGE3_BUTTON_KEY, page3Button);
 
         return pages;
-    }
-
-    private void updateChartDataset() {
-        dataset = createDataset();
-        chartPanel.getChart().getXYPlot().setDataset(dataset);
-        chartPanel.repaint();
-    }
-
-    private void updateGraphVisibility(String key, boolean isVisible) {
-        chartPanel.getChart().getXYPlot().getRenderer().setSeriesVisible(functionsOrder.indexOf(key), isVisible);
-        chartPanel.repaint();
     }
 
     private JPanel createInitialConditionsPanel() {
