@@ -14,10 +14,7 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
+import java.awt.event.*;
 import java.util.ArrayList;
 
 enum PageName {
@@ -183,6 +180,31 @@ class GUI extends JFrame {
         n0TF.setMinimumSize(new Dimension(30, 20));
         nMaxTF.setMinimumSize(new Dimension(30, 20));
 
+        KeyAdapter keyDoubleAdapter = new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                if (!(Character.isDigit(e.getKeyChar()) || e.getKeyChar() == '.')) {
+                    e.consume();
+                }
+            }
+        };
+
+        KeyAdapter keyIntegerAdapter = new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+                if (!(Character.isDigit(e.getKeyChar()))) {
+                    e.consume();
+                }
+            }
+        };
+
+        xInitialTF.addKeyListener(keyDoubleAdapter);
+        yInitialTF.addKeyListener(keyDoubleAdapter);
+        xRightBorderTF.addKeyListener(keyDoubleAdapter);
+        stepsTF.addKeyListener(keyIntegerAdapter);
+        n0TF.addKeyListener(keyIntegerAdapter);
+        nMaxTF.addKeyListener(keyIntegerAdapter);
+
         xInitialTF.getDocument().addDocumentListener(new DocumentListener() {
 
             void warn(DocumentEvent e) {
@@ -192,7 +214,7 @@ class GUI extends JFrame {
                         dataProvider.setxInitial(Double.parseDouble(text));
                         updateChartDataset();
                     }
-                } catch (BadLocationException ex) {
+                } catch (BadLocationException | NumberFormatException ex) {
                     ex.printStackTrace();
                 }
             }
@@ -218,10 +240,11 @@ class GUI extends JFrame {
                 try {
                     String text = e.getDocument().getText(0, e.getDocument().getLength());
                     if (!text.isEmpty()) {
+                        Double.parseDouble(text);
                         dataProvider.setyInitial(Double.parseDouble(text));
                         updateChartDataset();
                     }
-                } catch (BadLocationException ex) {
+                } catch (BadLocationException | NumberFormatException ex) {
                     ex.printStackTrace();
                 }
             }
@@ -247,10 +270,11 @@ class GUI extends JFrame {
                 try {
                     String text = e.getDocument().getText(0, e.getDocument().getLength());
                     if (!text.isEmpty()) {
+                        Double.parseDouble(text);
                         dataProvider.setRightBorder(Double.parseDouble(text));
                         updateChartDataset();
                     }
-                } catch (BadLocationException ex) {
+                } catch (BadLocationException | NumberFormatException ex) {
                     ex.printStackTrace();
                 }
             }

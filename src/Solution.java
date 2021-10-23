@@ -19,11 +19,15 @@ class Solution {
         return 2 * Math.exp(x) - y;
     }
 
+    private double y(double x) {
+        return Math.exp(x) + parameter * Math.exp(-x);
+    }
+
     public XYSeries getExactSolution() {
         var series = new XYSeries("Exact");
         double x = xInitial;
         for (int i = 0; i <= amountOfSteps; i++) {
-            series.add(x, Math.exp(x) + parameter * Math.exp(-x));
+            series.add(x, y(x));
             x += h;
         }
         return series;
