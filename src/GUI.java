@@ -115,9 +115,9 @@ class GUI extends JFrame {
     }
 
     private JPanel createPagesPanel() {
-        JButton page1Button = new JButton("Page 1");
-        JButton page2Button = new JButton("Page 2");
-        JButton page3Button = new JButton("Page 3");
+        JButton page1Button = new JButton("Function");
+        JButton page2Button = new JButton("LTE");
+        JButton page3Button = new JButton("GTE");
 
         page1Button.addActionListener(new ActionListener() {
             @Override
@@ -180,16 +180,16 @@ class GUI extends JFrame {
         n0TF.setMinimumSize(new Dimension(30, 20));
         nMaxTF.setMinimumSize(new Dimension(30, 20));
 
-        KeyAdapter keyDoubleAdapter = new KeyAdapter() {
+        KeyAdapter keyXYAdapter = new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
-                if (!(Character.isDigit(e.getKeyChar()) || e.getKeyChar() == '.')) {
+                if (!(Character.isDigit(e.getKeyChar()) || e.getKeyChar() == '-' || e.getKeyChar() == '.')) {
                     e.consume();
                 }
             }
         };
 
-        KeyAdapter keyIntegerAdapter = new KeyAdapter() {
+        KeyAdapter keyStepAdapter = new KeyAdapter() {
             @Override
             public void keyTyped(KeyEvent e) {
                 if (!(Character.isDigit(e.getKeyChar()))) {
@@ -198,12 +198,12 @@ class GUI extends JFrame {
             }
         };
 
-        xInitialTF.addKeyListener(keyDoubleAdapter);
-        yInitialTF.addKeyListener(keyDoubleAdapter);
-        xRightBorderTF.addKeyListener(keyDoubleAdapter);
-        stepsTF.addKeyListener(keyIntegerAdapter);
-        n0TF.addKeyListener(keyIntegerAdapter);
-        nMaxTF.addKeyListener(keyIntegerAdapter);
+        xInitialTF.addKeyListener(keyXYAdapter);
+        yInitialTF.addKeyListener(keyXYAdapter);
+        xRightBorderTF.addKeyListener(keyXYAdapter);
+        stepsTF.addKeyListener(keyStepAdapter);
+        n0TF.addKeyListener(keyStepAdapter);
+        nMaxTF.addKeyListener(keyStepAdapter);
 
         xInitialTF.getDocument().addDocumentListener(new DocumentListener() {
 
