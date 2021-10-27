@@ -12,6 +12,12 @@ class DataProvider {
     private XYSeries eulerSolution;
     private XYSeries improvedEulerSolution;
     private XYSeries rungeKuttaSolution;
+    private XYSeries eulerLTE;
+    private XYSeries improvedEulerLTE;
+    private XYSeries rungeKuttaLTE;
+    private XYSeries eulerGTE;
+    private XYSeries improvedEulerGTE;
+    private XYSeries rungeKuttaGTE;
 
     public DataProvider() {
         xInitial = 0;
@@ -20,10 +26,11 @@ class DataProvider {
         amountOfSteps = 10;
         nMin = 10;
         nMax = 20;
-        calculateNewSolutions();
+        getAllSolutions();
+        getAllErrors();
     }
 
-    private void calculateNewSolutions() {
+    private void getAllSolutions() {
         Solution solution = new Solution(xInitial, yInitial, rightBorder, amountOfSteps);
         exactSolution = solution.getExactSolution();
         eulerSolution = solution.getEulerSolution();
@@ -31,32 +38,49 @@ class DataProvider {
         rungeKuttaSolution = solution.getRungeKuttaSolution();
     }
 
+    private void getAllErrors() {
+        Error error = new Error();
+        eulerLTE = error.getEulerLTE(exactSolution, eulerSolution, amountOfSteps);
+        improvedEulerLTE = error.getImprovedEulerLTE(exactSolution, improvedEulerSolution, amountOfSteps);
+        rungeKuttaLTE = error.getRungeKuttaErrorLTE(exactSolution, rungeKuttaSolution, amountOfSteps);
+        XYSeries[] GTEs = error.getGTEs(xInitial, yInitial, rightBorder, nMin, nMax);
+        eulerGTE = GTEs[0];
+        improvedEulerGTE = GTEs[1];
+        rungeKuttaGTE = GTEs[2];
+    }
+
     public void setRightBorder(double rightBorder) {
         this.rightBorder = rightBorder;
-        calculateNewSolutions();
+        getAllSolutions();
+        getAllErrors();
     }
 
     public void setxInitial(double xInitial) {
         this.xInitial = xInitial;
-        calculateNewSolutions();
+        getAllSolutions();
+        getAllErrors();
     }
 
     public void setyInitial(double yInitial) {
         this.yInitial = yInitial;
-        calculateNewSolutions();
+        getAllSolutions();
+        getAllErrors();
     }
 
     public void setAmountOfSteps(int amountOfSteps) {
         this.amountOfSteps = amountOfSteps;
-        calculateNewSolutions();
+        getAllSolutions();
+        getAllErrors();
     }
 
     public void setnMin(int nMin) {
         this.nMin = nMin;
+        getAllErrors();
     }
 
     public void setnMax(int nMax) {
         this.nMax = nMax;
+        getAllErrors();
     }
 
     public double getxInitial() {
@@ -99,56 +123,27 @@ class DataProvider {
         return rungeKuttaSolution;
     }
 
-    public XYSeries getEulerErrorDependsX() {
-        var series = new XYSeries("Euler");
-        for (int i = 0; i <= amountOfSteps; i++) {
-            series.add(exactSolution.getX(i), Math.abs((double) exactSolution.getY(i) - (double) eulerSolution.getY(i)));
-        }
-        return series;
+    public XYSeries getEulerLTE() {
+        return eulerLTE;
     }
 
-    public XYSeries getImprovedEulerErrorDependsX() {
-        var series = new XYSeries("Improved Euler");
-        for (int i = 0; i <= amountOfSteps; i++) {
-            series.add(exactSolution.getX(i), Math.abs((double) exactSolution.getY(i) - (double) improvedEulerSolution.getY(i)));
-        }
-        return series;
+    public XYSeries getImprovedEulerLTE() {
+        return improvedEulerLTE;
     }
 
-    public XYSeries getRungeKuttaErrorDependsX() {
-        var series = new XYSeries("Runge-Kutta");
-        for (int i = 0; i <= amountOfSteps; i++) {
-            series.add(exactSolution.getX(i), Math.abs((double) exactSolution.getY(i) - (double) rungeKuttaSolution.getY(i)));
-        }
-        return series;
+    public XYSeries getRungeKuttaLTE() {
+        return rungeKuttaLTE;
     }
 
-    public XYSeries[] getErrorsDependsN() {
-        var eulerSeries = new XYSeries("Euler");
-        var improvedEulerSeries = new XYSeries("Improved Euler");
-        var rungeKuttaSeries = new XYSeries("Runge-Kutta");
-        for (int n = nMin; n <= nMax; n++) {
-            Solution solution = new Solution(xInitial, yInitial, rightBorder, n);
-            XYSeries exact = solution.getExactSolution();
-            XYSeries euler = solution.getEulerSolution();
-            XYSeries improvedEuler = solution.getImprovedEulerSolution();
-            XYSeries rungeKutta = solution.getRungeKuttaSolution();
-            double eulerErrorMax = 0;
-            double improvedRulerErrorMax = 0;
-            double rungeKuttaErrorMax = 0;
-            for (int i = 0; i <= n; i++) {
-                eulerErrorMax = Math.max(eulerErrorMax, Math.abs((double) exact.getY(i) - (double) euler.getY(i)));
-                improvedRulerErrorMax = Math.max(improvedRulerErrorMax, Math.abs((double) exact.getY(i) - (double) improvedEuler.getY(i)));
-                rungeKuttaErrorMax = Math.max(rungeKuttaErrorMax, Math.abs((double) exact.getY(i) - (double) rungeKutta.getY(i)));
-            }
-            eulerSeries.add(n, eulerErrorMax);
-            improvedEulerSeries.add(n, improvedRulerErrorMax);
-            rungeKuttaSeries.add(n, rungeKuttaErrorMax);
-        }
-        XYSeries[] result = new XYSeries[3];
-        result[0] = eulerSeries;
-        result[1] = improvedEulerSeries;
-        result[2] = rungeKuttaSeries;
-        return result;
+    public XYSeries getEulerGTE() {
+        return eulerGTE;
+    }
+
+    public XYSeries getImprovedEulerGTE() {
+        return improvedEulerGTE;
+    }
+
+    public XYSeries getRungeKuttaGTE() {
+        return rungeKuttaGTE;
     }
 }

@@ -6,7 +6,6 @@ import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYDataset;
-import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
 import javax.swing.*;
@@ -19,8 +18,8 @@ import java.util.ArrayList;
 
 enum PageName {
     Functions,
-    ErrorsX,
-    ErrorsN
+    LTE,
+    GTE
 }
 
 class GUI extends JFrame {
@@ -66,17 +65,17 @@ class GUI extends JFrame {
     private void setPageSettings() {
         ((JCheckBox) checkBoxesPanel.getClientProperty(EXACT_CB_KEY)).setVisible(currentPage == PageName.Functions);
         ((JButton) pagesPanel.getClientProperty(PAGE1_BUTTON_KEY)).setEnabled(currentPage != PageName.Functions);
-        ((JButton) pagesPanel.getClientProperty(PAGE2_BUTTON_KEY)).setEnabled(currentPage != PageName.ErrorsX);
-        ((JButton) pagesPanel.getClientProperty(PAGE3_BUTTON_KEY)).setEnabled(currentPage != PageName.ErrorsN);
-        ((JTextField) initialConditionsPanel.getClientProperty(X_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
-        ((JTextField) initialConditionsPanel.getClientProperty(Y_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
-        ((JTextField) initialConditionsPanel.getClientProperty(X_RIGHT_BOUND_TF_KEY)).setEnabled(currentPage != PageName.ErrorsN);
-        ((JTextField) initialConditionsPanel.getClientProperty(STEPS_TF_KEY)).setVisible(currentPage != PageName.ErrorsN);
-        ((JTextField) initialConditionsPanel.getClientProperty(N0_TF_KEY)).setVisible(currentPage == PageName.ErrorsN);
-        ((JTextField) initialConditionsPanel.getClientProperty(N_MAX_TF_KEY)).setVisible(currentPage == PageName.ErrorsN);
-        ((JLabel) initialConditionsPanel.getClientProperty(STEPS_LABEL_KEY)).setVisible(currentPage != PageName.ErrorsN);
-        ((JLabel) initialConditionsPanel.getClientProperty(N0_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
-        ((JLabel) initialConditionsPanel.getClientProperty(N_MAX_LABEL_KEY)).setVisible(currentPage == PageName.ErrorsN);
+        ((JButton) pagesPanel.getClientProperty(PAGE2_BUTTON_KEY)).setEnabled(currentPage != PageName.LTE);
+        ((JButton) pagesPanel.getClientProperty(PAGE3_BUTTON_KEY)).setEnabled(currentPage != PageName.GTE);
+        ((JTextField) initialConditionsPanel.getClientProperty(X_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.GTE);
+        ((JTextField) initialConditionsPanel.getClientProperty(Y_INITIAL_TF_KEY)).setEnabled(currentPage != PageName.GTE);
+        ((JTextField) initialConditionsPanel.getClientProperty(X_RIGHT_BOUND_TF_KEY)).setEnabled(currentPage != PageName.GTE);
+        ((JTextField) initialConditionsPanel.getClientProperty(STEPS_TF_KEY)).setVisible(currentPage != PageName.GTE);
+        ((JTextField) initialConditionsPanel.getClientProperty(N0_TF_KEY)).setVisible(currentPage == PageName.GTE);
+        ((JTextField) initialConditionsPanel.getClientProperty(N_MAX_TF_KEY)).setVisible(currentPage == PageName.GTE);
+        ((JLabel) initialConditionsPanel.getClientProperty(STEPS_LABEL_KEY)).setVisible(currentPage != PageName.GTE);
+        ((JLabel) initialConditionsPanel.getClientProperty(N0_LABEL_KEY)).setVisible(currentPage == PageName.GTE);
+        ((JLabel) initialConditionsPanel.getClientProperty(N_MAX_LABEL_KEY)).setVisible(currentPage == PageName.GTE);
         String xLabel = "";
         String yLabel = "";
         boolean isVisible = true;
@@ -87,12 +86,12 @@ class GUI extends JFrame {
                 yLabel = "Y";
                 isVisible = ((JCheckBox) checkBoxesPanel.getClientProperty(EXACT_CB_KEY)).isSelected();
             }
-            case ErrorsX -> {
+            case LTE -> {
                 xLabel = "X";
                 yLabel = "E(x)";
                 isVisible = false;
             }
-            case ErrorsN -> {
+            case GTE -> {
                 xLabel = "N";
                 yLabel = "E(n)";
                 isVisible = false;
@@ -130,7 +129,7 @@ class GUI extends JFrame {
         page2Button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                currentPage = PageName.ErrorsX;
+                currentPage = PageName.LTE;
                 setPageSettings();
                 updateChartDataset();
             }
@@ -138,7 +137,7 @@ class GUI extends JFrame {
         page3Button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                currentPage = PageName.ErrorsN;
+                currentPage = PageName.GTE;
                 setPageSettings();
                 updateChartDataset();
             }
@@ -483,35 +482,28 @@ class GUI extends JFrame {
 
     private XYDataset createDataset() {
         var dataset = new XYSeriesCollection();
-        switch (currentPage) {
-            case Functions -> {
-                for (String function : functionsOrder) {
-                    switch (function) {
-                        case EXACT_KEY -> dataset.addSeries(dataProvider.getExactSolution());
-                        case EULER_KEY -> dataset.addSeries(dataProvider.getEulerSolution());
-                        case IMPROVED_EULER_KEY -> dataset.addSeries(dataProvider.getImprovedEulerSolution());
-                        case RUNGE_KUTTA_KEY -> dataset.addSeries(dataProvider.getRungeKuttaSolution());
+        for (String function : functionsOrder) {
+            switch (function) {
+                case EXACT_KEY -> dataset.addSeries(dataProvider.getExactSolution());
+                case EULER_KEY -> {
+                    switch (currentPage) {
+                        case Functions -> dataset.addSeries(dataProvider.getEulerSolution());
+                        case LTE -> dataset.addSeries(dataProvider.getEulerLTE());
+                        case GTE -> dataset.addSeries(dataProvider.getEulerGTE());
                     }
                 }
-            }
-            case ErrorsX -> {
-                for (String function : functionsOrder) {
-                    switch (function) {
-                        case EXACT_KEY -> dataset.addSeries(dataProvider.getExactSolution());
-                        case EULER_KEY -> dataset.addSeries(dataProvider.getEulerErrorDependsX());
-                        case IMPROVED_EULER_KEY -> dataset.addSeries(dataProvider.getImprovedEulerErrorDependsX());
-                        case RUNGE_KUTTA_KEY -> dataset.addSeries(dataProvider.getRungeKuttaErrorDependsX());
+                case IMPROVED_EULER_KEY -> {
+                    switch (currentPage) {
+                        case Functions -> dataset.addSeries(dataProvider.getImprovedEulerSolution());
+                        case LTE -> dataset.addSeries(dataProvider.getImprovedEulerLTE());
+                        case GTE -> dataset.addSeries(dataProvider.getImprovedEulerGTE());
                     }
                 }
-            }
-            case ErrorsN -> {
-                XYSeries[] data = dataProvider.getErrorsDependsN();
-                for (String function : functionsOrder) {
-                    switch (function) {
-                        case EXACT_KEY -> dataset.addSeries(dataProvider.getExactSolution());
-                        case EULER_KEY -> dataset.addSeries(data[0]);
-                        case IMPROVED_EULER_KEY -> dataset.addSeries(data[1]);
-                        case RUNGE_KUTTA_KEY -> dataset.addSeries(data[2]);
+                case RUNGE_KUTTA_KEY -> {
+                    switch (currentPage) {
+                        case Functions -> dataset.addSeries(dataProvider.getRungeKuttaSolution());
+                        case LTE -> dataset.addSeries(dataProvider.getRungeKuttaLTE());
+                        case GTE -> dataset.addSeries(dataProvider.getRungeKuttaGTE());
                     }
                 }
             }
